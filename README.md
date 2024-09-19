@@ -130,13 +130,12 @@ store-api/
 |       |-- AppError.ts
 |       |-- uploadFile.ts
 |   |-- index.ts
-|-- .env.example
+|-- .env
+|-- fastify-multipart.d.ts
 |-- docker-compose.yml
 |-- Dockerfile
 |-- package.json
 |-- README.md
-|-- tree.drawio
-|-- tree.png
 |-- tsconfig.json
 ```
 
