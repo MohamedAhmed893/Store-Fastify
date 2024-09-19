@@ -56,13 +56,24 @@ const getAllCategory =async (request:FastifyRequest,reply:FastifyReply)=>{
 }
 
 
-// const getCategoriesWithSubcategories = async (request: FastifyRequest, reply: FastifyReply) => {
-//     const categories = await prisma.category.findMany({
-//      where:{parentId:null},include:{children:true}
-//     });
-  
-//     reply.send({ categories });
-//   };
+const getCategoriesTree = async (request: FastifyRequest, reply: FastifyReply) => {
+ 
+    const categories = await prisma.category.findMany({
+      where: {
+        parentId: null, 
+      },
+      include: {
+        children: { 
+          include: {
+            children: true, 
+          },
+        },
+      },
+    });
+
+    reply.send({ message:'Success',categories });
+};
+
 
 
 const getCategoryById =async (request:FastifyRequest<{Params: { id: string }}>,reply:FastifyReply)=>{
@@ -95,7 +106,8 @@ export {
     getAllCategory ,
     updateCategory ,
     getCategoryById ,
-    deleteCategory
+    deleteCategory ,
+    getCategoriesTree
 }
 
 
