@@ -56,21 +56,6 @@ This project is a simple store API built using Fastify with TypeScript, Prisma f
     ADDRESS=localhost
     ```
 
-6.  **After setup env files Run this command**
-    -   run this command to migrate database and run project in development
-    ```bash
-    npm run migrate:dev
-    ```
-7.  **Run prettier:**
-    -   to run prettier for formatting the code run
-    ```bash
-       npm run prettier
-    ```
-8.  **Run Eslint:**
-    ```bash
-       npm run lint
-    ```
-
 # Database Schema
 
 ## Categories Table
@@ -132,7 +117,6 @@ store-api/
 |   |-- index.ts
 |-- .env
 |-- fastify-multipart.d.ts
-|-- docker-compose.yml
 |-- Dockerfile
 |-- package.json
 |-- README.md
