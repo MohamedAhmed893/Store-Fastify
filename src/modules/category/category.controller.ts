@@ -8,45 +8,46 @@ import { handleFileUpload } from "../../utils/uploadFile";
 
 
 const addCategory = async (request: FastifyRequest, reply: FastifyReply) => {
-  
-    const parts = request.parts();
+  const parts = request.parts();
 
-    let name: string | undefined;
-    let parentId: string | undefined;
-    let pictureName: string | undefined;
+  let name: string | undefined;
+  let parentId: string | undefined;
+  let pictureName: string | undefined;
 
-    for await (const part of parts) {
-      if (part.type === 'file') {
-        const file = part as MultipartFile;
-        pictureName = await handleFileUpload(file, path.join(__dirname, '../../../uploads/category'));
-      } else {
-        if (part.fieldname === 'name') {
-          name = part.value as string;
-        } else if (part.fieldname === 'parentId') {
-          parentId = part.value as string;
-        }
+  for await (const part of parts) {
+    if (part.type === 'file') {
+      const file = part as MultipartFile;
+      pictureName = await handleFileUpload(file, path.join(__dirname, '../../../uploads/category'));
+    } else {
+      if (part.fieldname === 'name') {
+        name = part.value as string;
+      } else if (part.fieldname === 'parentId') {
+        parentId = part.value as string;
       }
     }
+  }
 
-    if (!name || !parentId) {
-      return reply.status(400).send({ message: 'Name and parentId are required.' });
-    }
+  if (!name) {
+    return reply.status(400).send({ message: 'Name is required.' });
+  }
 
-    const parentIdNumber = parseInt(parentId, 10);
+  let parentIdNumber: number | null = null; 
+  if (parentId) {
+    parentIdNumber = parseInt(parentId, 10);
     if (isNaN(parentIdNumber)) {
       return reply.status(400).send({ message: 'Invalid parentId provided.' });
     }
+  }
 
-    const newCategory = await prisma.category.create({
-      data: {
-        name,
-        parentId: parentIdNumber,
-        picture: pictureName,
-      },
-    });
+  const newCategory = await prisma.category.create({
+    data: {
+      name,
+      parentId: parentIdNumber, 
+      picture: pictureName,
+    },
+  });
 
-    reply.send({ message: 'Category added successfully', category: newCategory });
-  
+  reply.send({ message: 'Category added successfully', category: newCategory });
 };
 
 
@@ -56,23 +57,70 @@ const getAllCategory =async (request:FastifyRequest,reply:FastifyReply)=>{
 }
 
 
-const getCategoriesTree = async (request: FastifyRequest, reply: FastifyReply) => {
- 
-    const categories = await prisma.category.findMany({
-      where: {
-        parentId: null, 
-      },
-      include: {
-        children: { 
-          include: {
-            children: true, 
-          },
-        },
-      },
+const getCategoriesTreeWithProductCount = async (request: FastifyRequest, reply: FastifyReply) => {
+  
+  const countProductsRecursive = async (categoryId: number): Promise<number> => {
+
+    const productsCount = await prisma.product.count({
+      where: { category_id: categoryId },
     });
 
-    reply.send({ message:'Success',categories });
+
+    const children = await prisma.category.findMany({
+      where: { parentId: categoryId },
+    });
+
+    let totalProductCount = productsCount;
+
+  
+    for (const child of children) {
+      totalProductCount += await countProductsRecursive(child.id);
+    }
+
+    return totalProductCount;
+  };
+  const getChildren = async (parentId: number): Promise<any[]> => {
+    const children = await prisma.category.findMany({
+      where: { parentId },
+    });
+
+    return Promise.all(children.map(async (child) => {
+      const productCount = await countProductsRecursive(child.id);
+      return {
+        id: child.id,
+        name: child.name,
+        parentId: child.parentId,
+        productCount, 
+        children: await getChildren(child.id), 
+      };
+    }));
+  };
+  const categories = await prisma.category.findMany({
+    where: {
+      parentId: null,
+    },
+  });
+  const categoriesWithProductCount = await Promise.all(categories.map(async (category) => {
+    const productCount = await countProductsRecursive(category.id);
+    
+    return {
+      id: category.id,
+      name: category.name,
+      parentId: category.parentId,
+      productCount, 
+      children: await getChildren(category.id), 
+    };
+  }));
+  reply.send({
+    message: 'Success',
+    categories: categoriesWithProductCount,
+  });
 };
+
+
+
+
+
 
 
 
@@ -107,7 +155,7 @@ export {
     updateCategory ,
     getCategoryById ,
     deleteCategory ,
-    getCategoriesTree
+    getCategoriesTreeWithProductCount
 }
 
 
