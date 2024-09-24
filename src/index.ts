@@ -3,7 +3,6 @@ import { AppError } from './utils/AppError'
 import { productRouter } from './modules/product/product.router'
 import { catergoryRouter } from './modules/category/category.router'
 import fastifyMultipart from '@fastify/multipart'
-import { prisma } from './database/dbConnections'
 
 
 const fastify = Fastify({
